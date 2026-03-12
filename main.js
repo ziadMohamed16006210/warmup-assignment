@@ -6,8 +6,72 @@ const fs = require("fs");
 // endTime: (typeof string) formatted as hh:mm:ss am or hh:mm:ss pm
 // Returns: string formatted as h:mm:ss
 // ============================================================
+function ParseTime(time){
+    let [timeStarted , identifier]=time.split(" ");
+    let [hours,min ,sec]=timeStarted.split(":").map(Number);
+    if(hours===12){
+        hours = 0;
+    }
+    if(identifier === "pm"){
+        hours += 12;
+    }
+
+    return [hours, min, sec, identifier];
+
+}
+function ParseDuration(time){
+    let [hour,min ,sec]=time.split(":").map(Number);
+    return [hour, min, sec];
+
+}
+
+function convertToSec(hour, min, sec){
+    return hour*3600 + min*60 + sec;
+
+}
+
+function ParseToString(duration){
+    d_hours=Math.floor(duration/3600);
+    rest=duration%3600;
+    d_minutes=Math.floor(rest/60);
+    d_sec=rest%60;
+    
+    return d_hours + ":" + String(d_minutes).padStart(2, '0') + ":" + String(d_sec).padStart(2, '0');
+
+}
+function parseDate(date){
+    let[year, month, day] = date.split("-").map(Number);
+    return [year, month, day];
+}
+function isEid(month, day){
+    if(month===4){
+        if(day>=10 && day<=30)
+            return true;
+    }
+    return false;
+}
+
+
 function getShiftDuration(startTime, endTime) {
+    
     // TODO: Implement this function
+
+    //calling helper function parseTime
+    let [hours1, min1, sec1, identifier1]=ParseTime(startTime);
+    let [hours2, min2, sec2, identifier2]=ParseTime(endTime);  
+   
+    
+    //case if employee started on a day and finished on the next day
+    if(hours2<hours1){
+        hours2 += 24;
+    }
+    let time1Sec = convertToSec(hours1, min1, sec1);
+    let time2Sec = convertToSec(hours2, min2, sec2);
+
+     duration = time2Sec - time1Sec;
+
+    let timeAsString = ParseToString(duration);
+    return timeAsString;
 }
 
 // ============================================================
@@ -17,6 +81,50 @@ function getShiftDuration(startTime, endTime) {
 // Returns: string formatted as h:mm:ss
 // ============================================================
 function getIdleTime(startTime, endTime) {
+     let shiftStart = "8:00:00 am";
+     let shiftEnd = "10:00:00 pm"
+    let [hours1, min1, sec1, identifier1]=ParseTime(startTime);
+    let [hours2, min2, sec2, identifier2]=ParseTime(endTime);  
+    let[hour8,min8,sec8,identifier8]=ParseTime(shiftStart);
+    let[hour10,min10,sec10,identifier10]=ParseTime(shiftEnd);
+    
+    let startTimeSec = convertToSec(hours1,min1, sec1);
+    let endTimeSec = convertToSec(hours2,min2, sec2);
+    let eightAmSec = convertToSec(hour8,min8, sec8);
+    let tenPmSec = convertToSec(hour10,min10, sec10);
+     let idleSec=0;
+    
+     if(endTimeSec<startTimeSec){
+        endTimeSec += 24*3600;
+     }
+     if(startTimeSec<eightAmSec && endTimeSec<eightAmSec){
+        idleSec += endTimeSec-startTimeSec;
+        return ParseToString(idleSec);
+     }
+      if(startTimeSec>tenPmSec && endTimeSec>tenPmSec){
+        idleSec += endTimeSec-startTimeSec;
+        return ParseToString(idleSec);
+     }
+   
+    if(startTimeSec<eightAmSec){
+      diffrence = eightAmSec - startTimeSec;
+      idleSec+=diffrence;
+
+    }
+    if(endTimeSec>tenPmSec){
+        diffrence = endTimeSec - tenPmSec;
+        idleSec += diffrence;
+    }
+    finalIdleTime = ParseToString(idleSec);
+
+    return finalIdleTime;
+    
+    
+    
+    
+    
+
+     
     // TODO: Implement this function
 }
 
@@ -27,6 +135,17 @@ function getIdleTime(startTime, endTime) {
 // Returns: string formatted as h:mm:ss
 // ============================================================
 function getActiveTime(shiftDuration, idleTime) {
+    let [h1, m1, s1] = ParseDuration(shiftDuration);
+    let [h2, m2, s2] = ParseDuration(idleTime);
+
+    shiftInSec=convertToSec(h1, m1, s1);
+    idelInSec=convertToSec(h2, m2, s2);
+     
+    diffrence = shiftInSec-idelInSec;
+
+    return ParseToString(diffrence);
+
+
     // TODO: Implement this function
 }
 
@@ -37,6 +156,23 @@ function getActiveTime(shiftDuration, idleTime) {
 // Returns: boolean
 // ============================================================
 function metQuota(date, activeTime) {
+      let [year, month, day ]= parseDate(date);
+       let[hour, min ,sec]= ParseDuration(activeTime);
+       let workedSec=convertToSec(hour, min ,sec);
+       let quotaInSec=convertToSec(8,24,0)
+       let eidQuotaInSec=convertToSec(6,0,0)
+      if(isEid(month, day)){
+        if(workedSec<eidQuotaInSec){
+            return false;
+        }
+      }else{
+        if(workedSec<quotaInSec){
+            return false;
+        }
+      }
+      return true;
+
+
     // TODO: Implement this function
 }
 
@@ -121,3 +257,5 @@ module.exports = {
     getRequiredHoursPerMonth,
     getNetPay
 };
+
+
