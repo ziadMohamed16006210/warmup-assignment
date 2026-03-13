@@ -198,7 +198,7 @@ function addShiftRecord(textFile, shiftObj) {
     shiftObj.metQuota = metQuota(date, shiftObj.activeTime)
     shiftObj.hasBonus = false;
 
-    let data = fs.readFileSync('shifts.txt', 'utf8')
+    let data = fs.readFileSync(textFile, 'utf8')
     lines = data.trim().split('\n');
     let headers = lines[0].split(',');
     let objs = lines.slice(1).map(line => {
@@ -211,7 +211,7 @@ function addShiftRecord(textFile, shiftObj) {
         }
         return obj;
     })
-   //console.log(objs);
+    //console.log(objs);
 
     for (let i = 0; i < objs.length; i++) {
         if (objs[i].DriverID === shiftObj.driverID && objs[i].Date === shiftObj.date) {
@@ -219,14 +219,14 @@ function addShiftRecord(textFile, shiftObj) {
         }
     }
     let lastIndex = -1;
-    
+
     for (let i = 0; i < objs.length; i++) {
-        
+
         if (objs[i].DriverID === shiftObj.driverID) {
             lastIndex = i;
         }
-    } 
-     console.log(lastIndex)
+    }
+    console.log(lastIndex)
 
     if (lastIndex !== -1) {
 
@@ -256,6 +256,36 @@ function addShiftRecord(textFile, shiftObj) {
 // Returns: nothing (void)
 // ============================================================
 function setBonus(textFile, driverID, date, newValue) {
+
+    let data = fs.readFileSync(textFile, 'utf8')
+    lines = data.trim().split('\n');
+    let headers = lines[0].split(',');
+    let objs = lines.slice(1).map(line => {
+        let values = line.split(',')
+        let obj = {};
+        for (let i = 0; i < values.length; i++) {
+            let key = headers[i];
+            let value = values[i];
+            obj[key] = value;
+        }
+        return obj;
+    })
+    for (let i = 0; i < objs.length; i++) {
+        if (objs[i].DriverID === driverID && objs[i].Date === date) {
+           
+            objs[i].HasBonus = newValue;
+           
+        }
+    }
+    let fileContent = headers.join(',') + '\n';
+
+    for (let i = 0; i < objs.length; i++) {
+        fileContent += objTorow(objs[i]);
+    }
+
+    fs.writeFileSync('shifts.txt', fileContent, 'utf8');
+
+
     // TODO: Implement this function
 }
 
